@@ -1,0 +1,241 @@
+---
+
+- name: Installing base system utilities
+  hosts: 127.0.0.1
+  connection: local
+  become: true
+  tasks:
+
+    - name: Checking for Python...
+      raw: test -e /usr/bin/python
+      changed_when: false
+      failed_when: false
+      register: check_python
+
+    - name: Installing Python
+      raw: apt -y update && apt install -y python-minimal
+      when: check_python.rc != 0
+
+    - name: Installing aptitude
+      apt: name="aptitude" state="present" update_cache="yes" force_apt_get="yes"
+      register: task_result
+      until: task_result is success
+      retries: 3
+      delay: 10
+
+    - name: Base system update and upgrade
+      become: true
+      apt:
+        upgrade: "yes"
+        update_cache: "yes"
+        cache_valid_time: 86400 #One day
+
+    - name: Installing base system tools
+      apt: name="nano,net-tools,ntpdate,git,python-apt,software-properties-common,apt-transport-https,ca-certificates,curl,gnupg-agent,python3-pip, python-setuptools, postgresql, docker-io" state="present" update_cache="yes" force_apt_get="yes"
+      register: task_result
+      until: task_result is success
+      retries: 3
+      delay: 10
+
+    - name: Enabling remote connections for postgresql
+      lineinfile:
+        dest: "/etc/postgresql/12/main/postgresql.conf"
+        regexp: "listen_addresses"
+        line: "listen_addresses = '*'"
+
+    - name: Enabling loose access controls for postgresql
+      copy:
+        src: files/etc/postgresql
+        dest: /etc/postgresql
+        owner: postgres
+        group: postgres
+        mode: '0640'
+
+- name: PHP7.4
+  hosts: 127.0.0.1
+  connection: local
+  
+  tasks:
+    - name: Install prerequisites
+      apt: name={{ item }} update_cache=yes state=latest force_apt_get=yes
+      loop: [ 'aptitude' ]
+
+    #Apache Installation
+    - name: Install Apache + PHP
+      apt: name={{ item }} update_cache=yes
+      loop: [ 'apache2=2.4*' ]
+
+    - name: Set up Apache configuration
+      copy:
+        src: "files/etc/apache2/"
+        dest: "/etc/apache2/"
+        owner: root
+        group: root
+        mode: '0755'
+    
+    - name: Enable rewrite module for apache
+      apache2_module:
+        name: rewrite
+        state: present
+
+    - name: Copies Default Document Root Content
+      copy:
+        src: files/var/www/html/index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Enable websites
+      shell: find . -type f -and -not -name "*default*" -exec a2ensite {} \;
+      args:
+        chdir: /etc/apache2/sites-available
+      register: websiteenable
+
+    - name: Display enabled websites
+      debug: msg="{{ websiteenable.stdout }}"
+
+    #Apache + PHP Configuration
+    - name: Install PHP + Deps
+      apt: name={{ item }} update_cache=yes
+      loop: [ "php=1{{':'}}7.4*", "libapache2-mod-php=1{{':'}}7.4*", "php-common", "php-cli=1{{':'}}4.2*", "php-curl=1{{':'}}7.4*", "php-gd=1{{':'}}7.4*", "php-json=1{{':'}}7.4*", "php-intl=1{{':'}}7.4*", "php-mysql=1{{':'}}7.4*", "php-pgsql=1{{':'}}7.4*", "php-imap=1{{':'}}7.4*", "php-bz2=1{{':'}}7.4*", "php-bcmath=1{{':'}}7.4*", "php-mbstring=1{{':'}}7.4*", "php-zip=1{{':'}}7.4*", "php-redis=3.1*", "npm=3.5.2-0ubuntu4"]
+
+    # Conf PHP
+    - name: Copies Apache PHP Configuration
+      copy:
+        src: files/etc/php/7.2/apache2/php.ini
+        dest: /etc/php/7.2/apache2/php.ini
+        owner: root
+        group: root
+        mode: '0611'
+
+    - name: Copies PHP CLI Configuration
+      copy:
+        src: files/etc/php/7.2/cli/php.ini
+        dest: /etc/php/7.2/cli/php.ini
+        owner: root
+        group: root
+        mode: '0611'
+
+    - name: copy session test
+      copy:
+        src: files/var/www/html/system-test.php
+        dest: /var/www/html/system-test.php
+        owner: www-data
+        group: www-data
+        mode: '0655'
+
+    # UFW Configuration
+    - name: "UFW - Allow HTTP on port 8080"
+      ufw:
+        rule: allow
+        port: '8080'
+        proto: tcp
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
+
+---
+- name: phpPgAdmin 
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+
+  - name: install
+    unarchive:
+        src: https://github.com/phppgadmin/phppgadmin/archive/REL_5-6-0.tar.gz
+        dest: /opt
+        remote_src: yes
+  # sudo: yes
+
+  - name: Create symbolic link
+    file:
+      src: "/opt/phppgadmin-REL_5-6-0"
+      dest: "/opt/phppgadmin"
+      state: link
+
+  - name: copy configuration file
+    copy:
+      src: files/opt/config.inc.php
+      dest: /opt/phppgadmin/conf/
+      owner: www-data
+      group: www-data
+      mode: '0655'
+
+
+- name: Nginx
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+  
+    - name: install nginx and ensure it is at the latest version
+      apt: name=nginx state=latest force_apt_get=yes
+  
+    - name: start nginx
+      service:
+          name: nginx
+          state: started
+
+    - name: Creates default document root
+      file:
+        path: "/var/www/html"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Creates default index page
+      copy:
+        src: files/var/www/html/index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Copies Default Document Root Content
+      copy:
+        src: files/var/www/html/index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Set up Nginx configuration
+      copy:
+        src: "files/etc/nginx/"
+        dest: "/etc/nginx/"
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Enable proxies
+      shell: find . -type f -exec ln -s /etc/nginx/sites-available/{} /etc/nginx/sites-enabled/{} \;
+      args:
+        chdir: /etc/nginx/sites-available
+      register: websiteenable
+
+    - name: Display enabled websites
+      debug: msg="{{ websiteenable.stdout }}"
+
+    - name: Remove default configuration file (prevents nginx from starting)
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Restart nginx
+      service: name=nginx state=restarted
+
+    # UFW Configuration
+    - name: "UFW - Allow HTTP on port 80"
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+    - name: "UFW - Allow HTTP on port 443"
+      ufw:
+        rule: allow
+        port: '443'
+        proto: tcp

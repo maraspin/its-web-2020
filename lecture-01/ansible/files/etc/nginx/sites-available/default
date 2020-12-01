@@ -1,0 +1,11 @@
+server {
+
+	listen 80;
+	root /var/www/html;
+	server_name wa.its;
+
+        access_log /var/log/nginx/wa-access.log lb;
+        error_log /var/log/nginx/wa-error.log;
+
+}
+
