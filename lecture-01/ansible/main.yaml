@@ -6,16 +6,6 @@
   become: true
   tasks:
 
-    - name: Checking for Python...
-      raw: test -e /usr/bin/python
-      changed_when: false
-      failed_when: false
-      register: check_python
-
-    - name: Installing Python
-      raw: apt -y update && apt install -y python-minimal
-      when: check_python.rc != 0
-
     - name: Installing aptitude
       apt: name="aptitude" state="present" update_cache="yes" force_apt_get="yes"
       register: task_result
@@ -31,7 +21,7 @@
         cache_valid_time: 86400 #One day
 
     - name: Installing base system tools
-      apt: name="nano,net-tools,ntpdate,git,python-apt,software-properties-common,apt-transport-https,ca-certificates,curl,gnupg-agent,python3-pip, python-setuptools, postgresql, docker-io" state="present" update_cache="yes" force_apt_get="yes"
+      apt: name="nano,net-tools,nmap,ntpdate,git,python-apt,software-properties-common,apt-transport-https,ca-certificates,curl,gnupg-agent,python3-pip, python-setuptools, postgresql, docker.io" state="present" update_cache="yes" force_apt_get="yes"
       register: task_result
       until: task_result is success
       retries: 3
@@ -50,6 +40,12 @@
         owner: postgres
         group: postgres
         mode: '0640'
+
+    - name: Make sure K3S is NOT running
+      command: /usr/bin/systemctl disable k3s
+
+    - name: Make sure docker is NOT running
+      command: /usr/bin/systemctl disable docker
 
 - name: PHP7.4
   hosts: 127.0.0.1
@@ -98,21 +94,21 @@
     #Apache + PHP Configuration
     - name: Install PHP + Deps
       apt: name={{ item }} update_cache=yes
-      loop: [ "php=1{{':'}}7.4*", "libapache2-mod-php=1{{':'}}7.4*", "php-common", "php-cli=1{{':'}}4.2*", "php-curl=1{{':'}}7.4*", "php-gd=1{{':'}}7.4*", "php-json=1{{':'}}7.4*", "php-intl=1{{':'}}7.4*", "php-mysql=1{{':'}}7.4*", "php-pgsql=1{{':'}}7.4*", "php-imap=1{{':'}}7.4*", "php-bz2=1{{':'}}7.4*", "php-bcmath=1{{':'}}7.4*", "php-mbstring=1{{':'}}7.4*", "php-zip=1{{':'}}7.4*", "php-redis=3.1*", "npm=3.5.2-0ubuntu4"]
+      loop: [ "php=2{{':'}}7.4*", "libapache2-mod-php=2{{':'}}7.4*", "php-common", "php-cli=2{{':'}}7.4*", "php-curl=2{{':'}}7.4*", "php-gd=2{{':'}}7.4*", "php-json=2{{':'}}7.4*", "php-intl=2{{':'}}7.4*", "php-mysql=2{{':'}}7.4*", "php-pgsql=2{{':'}}7.4*", "php-imap=2{{':'}}7.4*", "php-bz2=2{{':'}}7.4*", "php-bcmath=2{{':'}}7.4*", "php-mbstring=2{{':'}}7.4*", "php-zip=2{{':'}}7.4*", "php-redis=5.1*", "npm=6.14*"]
 
     # Conf PHP
     - name: Copies Apache PHP Configuration
       copy:
-        src: files/etc/php/7.2/apache2/php.ini
-        dest: /etc/php/7.2/apache2/php.ini
+        src: files/etc/php/7.4/apache2/php.ini
+        dest: /etc/php/7.4/apache2/php.ini
         owner: root
         group: root
         mode: '0611'
 
     - name: Copies PHP CLI Configuration
       copy:
-        src: files/etc/php/7.2/cli/php.ini
-        dest: /etc/php/7.2/cli/php.ini
+        src: files/etc/php/7.4/cli/php.ini
+        dest: /etc/php/7.4/cli/php.ini
         owner: root
         group: root
         mode: '0611'
@@ -137,7 +133,6 @@
         name: apache2
         state: restarted
 
----
 - name: phpPgAdmin 
   hosts: 127.0.0.1
   connection: local
@@ -153,13 +148,13 @@
   - name: Create symbolic link
     file:
       src: "/opt/phppgadmin-REL_5-6-0"
-      dest: "/opt/phppgadmin"
+      dest: "/opt/pgad"
       state: link
 
   - name: copy configuration file
     copy:
-      src: files/opt/config.inc.php
-      dest: /opt/phppgadmin/conf/
+      src: files/opt/pgad/conf/config.inc.php
+      dest: /opt/pgad/conf/
       owner: www-data
       group: www-data
       mode: '0655'
@@ -219,10 +214,10 @@
     - name: Display enabled websites
       debug: msg="{{ websiteenable.stdout }}"
 
-    - name: Remove default configuration file (prevents nginx from starting)
-      file:
-        path: /etc/nginx/sites-enabled/default
-        state: absent
+    #- name: Remove default configuration file (prevents nginx from starting)
+    #  file:
+    #    path: /etc/nginx/sites-enabled/default
+    #    state: absent
 
     - name: Restart nginx
       service: name=nginx state=restarted

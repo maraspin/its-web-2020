@@ -1,11 +1,11 @@
 server {
 
 	listen 80;
-	root /var/www/html;
+	root /opt/pgad;
 	server_name pgad.wa.its;
 
-        access_log /var/log/nginx/pgadmin-access.log lb;
-        error_log /var/log/nginx/pgadmin-01-error.log;
+        access_log /var/log/nginx/pgad-access.log lb;
+        error_log /var/log/nginx/pgad-01-error.log;
 
 	location / {
 		proxy_pass http://localhost:8080;

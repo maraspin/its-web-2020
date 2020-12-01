@@ -1,5 +1,7 @@
 <?php
 
+ini_set("display_errors", 0);
+
 /**
  * Central phpPgAdmin configuration.  As a user you may modify the
  * settings here for your particular configuration.
