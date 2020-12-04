@@ -27,6 +27,8 @@ fastify.get('/hello-world', function (request, reply) {
   }
 
   let type = request.headers['accept-type'];
+  if (type == null) { type = '' }  
+
   if (type.includes("xml") && !type.includes("json")) {
   	resource = '<xml>' + resource.reply + '</xml>'
   	typer = 'text/xml'
