@@ -1,4 +1,9 @@
 #!/bin/bash
+
+/usr/bin/cp /etc/postgresql/12/main/pg_hba.conf /etc/postgresql/12/main/pg_hba.conf.bkp
+/usr/bin/cp /srv/apps/its-web-2020/lecture-01/ansible/files/etc/postgresql/12/main/pg_hba.conf /etc/postgresql/12/main/pg_hba.conf
+/usr/sbin/service postgresql restart
+
 echo "Creating DB..."
 /usr/bin/su - postgres -c "/usr/bin/psql -U postgres < /srv/apps/its-web-2020/lecture-02/as-5-ecommerce/php/scripts/create-db.sql"
 
