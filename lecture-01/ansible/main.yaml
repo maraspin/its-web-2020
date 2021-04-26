@@ -10,22 +10,49 @@
       apt: name="aptitude" state="present" update_cache="yes" force_apt_get="yes"
       register: task_result
       until: task_result is success
-      retries: 3
+      retries: 1
       delay: 10
+
+    - name: add universe repository for bionic
+      apt_repository: 
+        repo: deb http://archive.ubuntu.com/ubuntu bionic universe
+        state: present
+
+    - name: Add key for Postgres repo
+      apt_key: url=https://www.postgresql.org/media/keys/ACCC4CF8.asc state=present
+      sudo: yes
+
+    - name: Add Postgres repo to sources list
+      apt_repository: repo='deb http://apt.postgresql.org/pub/repos/apt bionic-pgdg main' state=present
+      sudo: yes
 
     - name: Base system update and upgrade
       become: true
       apt:
         upgrade: "yes"
         update_cache: "yes"
-        cache_valid_time: 86400 #One day
-
+        cache_valid_time: 6000
+        
     - name: Installing base system tools
-      apt: name="nano,net-tools,nmap,ntpdate,git,python-apt,software-properties-common,apt-transport-https,ca-certificates,curl,gnupg-agent,python3-pip, python-setuptools, postgresql, docker.io" state="present" update_cache="yes" force_apt_get="yes"
+      apt: name="nano,net-tools,nmap,ntpdate,git,python-apt,software-properties-common,apt-transport-https,ca-certificates,curl,gnupg-agent,python3-pip" state="present" update_cache="yes" force_apt_get="yes"
       register: task_result
       until: task_result is success
-      retries: 3
-      delay: 10
+      retries: 1
+      delay: 5
+
+    - name: Base system update and upgrade
+      become: true
+      apt:
+        upgrade: "yes"
+        update_cache: "yes"
+        cache_valid_time: 6000
+
+    - name: Installing Postgres & Docker
+      apt: name="postgresql-12,docker.io" state="present" update_cache="yes" force_apt_get="yes"
+      register: task_result
+      until: task_result is success
+      retries: 1
+      delay: 5
 
     - name: Enabling remote connections for postgresql
       lineinfile:
@@ -40,12 +67,6 @@
         owner: postgres
         group: postgres
         mode: '0640'
-
-    - name: Make sure K3S is NOT running
-      command: /usr/bin/systemctl disable k3s
-
-    - name: Make sure docker is NOT running
-      command: /usr/bin/systemctl disable docker
 
 - name: PHP7.4
   hosts: 127.0.0.1
@@ -94,21 +115,21 @@
     #Apache + PHP Configuration
     - name: Install PHP + Deps
       apt: name={{ item }} update_cache=yes
-      loop: [ "php=2{{':'}}7.4*", "libapache2-mod-php=2{{':'}}7.4*", "php-common", "php-cli=2{{':'}}7.4*", "php-curl=2{{':'}}7.4*", "php-gd=2{{':'}}7.4*", "php-json=2{{':'}}7.4*", "php-intl=2{{':'}}7.4*", "php-mysql=2{{':'}}7.4*", "php-pgsql=2{{':'}}7.4*", "php-imap=2{{':'}}7.4*", "php-bz2=2{{':'}}7.4*", "php-bcmath=2{{':'}}7.4*", "php-mbstring=2{{':'}}7.4*", "php-zip=2{{':'}}7.4*", "php-redis=5.1*", "npm=6.14*"]
+      loop: [ "php7.2", "libapache2-mod-php7.2", "php7.2-common", "php7.2-cli", "php7.2-curl", "php7.2-gd", "php7.2-json", "php7.2-intl", "php7.2-mysql", "php7.2-pgsql", "php7.2-imap", "php7.2-bz2", "php7.2-bcmath", "php7.2-mbstring","php7.2-zip","php-redis", "npm"]
 
     # Conf PHP
     - name: Copies Apache PHP Configuration
       copy:
-        src: files/etc/php/7.4/apache2/php.ini
-        dest: /etc/php/7.4/apache2/php.ini
+        src: files/etc/php/7.2/apache2/php.ini
+        dest: /etc/php/7.2/apache2/php.ini
         owner: root
         group: root
         mode: '0611'
 
     - name: Copies PHP CLI Configuration
       copy:
-        src: files/etc/php/7.4/cli/php.ini
-        dest: /etc/php/7.4/cli/php.ini
+        src: files/etc/php/7.2/cli/php.ini
+        dest: /etc/php/7.2/cli/php.ini
         owner: root
         group: root
         mode: '0611'
