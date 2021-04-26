@@ -255,3 +255,22 @@
         rule: allow
         port: '443'
         proto: tcp
+
+    - name: Execute the command in remote shell; stdout goes to the specified file on the remote
+      shell: "curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -"
+
+    #- name: Execute the command in remote shell; stdout goes to the specified file on the remote
+    #  command: sudo apt-get install -y nodejs
+    - name: Base system update and upgrade
+      become: true
+      apt:
+        upgrade: "yes"
+        update_cache: "yes"
+        cache_valid_time: 6000
+      
+    - name: Installing NodeJS
+      apt: name="nodejs" state="latest" update_cache="yes" force_apt_get="yes"
+      register: task_result
+      until: task_result is success
+      retries: 2
+      delay: 5
