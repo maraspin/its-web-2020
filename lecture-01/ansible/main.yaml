@@ -115,7 +115,7 @@
     #Apache + PHP Configuration
     - name: Install PHP + Deps
       apt: name={{ item }} update_cache=yes
-      loop: [ "php7.2", "libapache2-mod-php7.2", "php7.2-common", "php7.2-cli", "php7.2-curl", "php7.2-gd", "php7.2-json", "php7.2-intl", "php7.2-mysql", "php7.2-pgsql", "php7.2-imap", "php7.2-bz2", "php7.2-bcmath", "php7.2-mbstring","php7.2-zip","php-redis", "npm"]
+      loop: [ "php7.2", "libapache2-mod-php7.2", "php7.2-common", "php7.2-cli", "php7.2-curl", "php7.2-gd", "php7.2-json", "php7.2-intl", "php7.2-mysql", "php7.2-pgsql", "php7.2-imap", "php7.2-bz2", "php7.2-bcmath", "php7.2-mbstring","php7.2-zip","php-redis"]
 
     # Conf PHP
     - name: Copies Apache PHP Configuration
@@ -143,11 +143,10 @@
         mode: '0655'
 
     # UFW Configuration
-    - name: "UFW - Allow HTTP on port 8080"
+    - name: Allow everything and enable UFW
       ufw:
-        rule: allow
-        port: '8080'
-        proto: tcp
+        state: enabled
+        policy: allow
 
     - name: Restart Apache
       service:
@@ -243,18 +242,6 @@
     - name: Restart nginx
       service: name=nginx state=restarted
 
-    # UFW Configuration
-    - name: "UFW - Allow HTTP on port 80"
-      ufw:
-        rule: allow
-        port: '80'
-        proto: tcp
-
-    - name: "UFW - Allow HTTP on port 443"
-      ufw:
-        rule: allow
-        port: '443'
-        proto: tcp
 
     - name: Execute the command in remote shell; stdout goes to the specified file on the remote
       shell: "curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -"
