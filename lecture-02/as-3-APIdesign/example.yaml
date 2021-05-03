@@ -1,0 +1,37 @@
+swagger: "2.0"
+info:
+  title: Hello World API
+  description: Sample API documentation for the Hello World API. ITS Web Architecture Course
+  version: 1.0.0
+host: wa.its:3000
+basePath: /v1
+schemes:
+  - http
+paths:
+  /:
+    get:
+      summary: Returns a localized greeting to the world.
+      parameters:
+        - in: header
+          name: Accept-Language
+          type: string
+          enum: [en, it]
+          required: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:   # JSON Response
+              schema:
+                $ref: '#/components/schemas/Greeting'
+            application/xml:    # XML Response
+              schema:
+                $ref: '#/components/schemas/Greeting'
+components:
+  schemas:
+    Greeting:
+      type: object
+      properties:
+        hello:
+          type: string
+  
