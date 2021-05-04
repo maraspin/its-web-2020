@@ -1,0 +1,51 @@
+body {
+    font-family: "Trebuchet MS",Arial,Helvetica,sans-serif;
+    color: #444;
+    font-size: 12px;
+}
+
+h1 {
+   font-size: 24px;
+   color: #222;
+}
+
+h2 {
+   font-size: 16px;
+   color: #333;
+}
+
+a:link, a:visited, a:active {
+    color: #2D9E0E;
+    text-decoration: none;
+    font-weight: normal;
+}
+
+a:hover {
+    color: #0F9E02;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+p.detail {
+   font-size: 14px;
+}
+
+#products {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#products td, #products th {
+    border: 1px solid #98BF21;
+    font-size: 1.2em;
+    padding: 3px 7px 2px;
+}
+
+#products thead td {
+    background-color: #A7C942;
+    color: #FFFFFF;
+    font-size: 1.4em;
+    padding-bottom: 4px;
+    padding-top: 5px;
+    text-align: left;
+}
