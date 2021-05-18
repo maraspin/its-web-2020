@@ -1,0 +1,20 @@
+server {
+
+	# Port nginx is listening on
+	listen 80;
+
+        # Server name as sent through http request
+        server_name as5.wa.its;
+	
+	location / {
+
+		# destination service - our nodejs script
+	        proxy_pass http://localhost:9000;
+
+	        access_log /var/log/nginx/as5-wa-access.log;
+	        error_log /var/log/nginx/as5-wa-error.log;
+
+	}
+
+}
+

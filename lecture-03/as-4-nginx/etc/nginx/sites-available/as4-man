@@ -1,0 +1,11 @@
+server {
+
+	listen 80;
+	root /srv/apps/its-web-2020/lecture-03/as-4-nginx/man;
+	server_name as4.wa.its;
+
+        access_log /var/log/nginx/as4-wa-access.log lb;
+        error_log /var/log/nginx/as4-wa-error.log;
+
+}
+
